@@ -83,3 +83,4 @@ playwright install firefox  # 不再需要 chromium
 - Cookie 文件格式兼容，可以直接使用
 - 如果遇到问题，可以查看 `docs/CAMOUFOX_MIGRATION.md`
 
+

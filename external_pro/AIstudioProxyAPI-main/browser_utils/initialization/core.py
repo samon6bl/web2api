@@ -31,7 +31,65 @@ from .auth import wait_for_model_list_and_handle_auth_save
 from .debug import setup_debug_listeners
 from .network import setup_network_interception_and_scripts
 
+# 导入反指纹管理器
+from config.settings import (
+    ENABLE_ANTI_FINGERPRINT,
+    ENABLE_BEHAVIOR_SIMULATION,
+    ENABLE_INTERACTION_SIMULATION,
+    ENABLE_FREQUENCY_CONTROL,
+    ENABLE_HEADER_MANAGEMENT,
+    MOUSE_MOVEMENT_SPEED_MIN,
+    MOUSE_MOVEMENT_SPEED_MAX,
+    CLICK_DELAY_MIN,
+    CLICK_DELAY_MAX,
+    SCROLL_SMOOTHNESS,
+    BROWSING_DURATION_MIN,
+    BROWSING_DURATION_MAX,
+    RANDOM_CLICK_PROBABILITY,
+    PAGE_TRANSITION_DELAY_MIN,
+    PAGE_TRANSITION_DELAY_MAX,
+    MAX_REQUESTS_PER_MINUTE,
+    MIN_REQUEST_INTERVAL,
+    ADAPTIVE_BACKOFF_ENABLED,
+    BACKOFF_MULTIPLIER,
+    MAX_BACKOFF_INTERVAL,
+)
+
 logger = logging.getLogger("AIStudioProxyServer")
+
+# 全局反指纹管理器实例
+_anti_fingerprint_manager = None
+
+
+def get_anti_fingerprint_manager(os_family: Optional[str] = None):
+    """获取反指纹管理器实例（单例模式）"""
+    global _anti_fingerprint_manager
+    if _anti_fingerprint_manager is None and ENABLE_ANTI_FINGERPRINT:
+        from browser_utils.anti_fingerprint import AntiFingerprintManager
+
+        _anti_fingerprint_manager = AntiFingerprintManager(
+            enable_behavior_simulation=ENABLE_BEHAVIOR_SIMULATION,
+            enable_interaction_simulation=ENABLE_INTERACTION_SIMULATION,
+            enable_frequency_control=ENABLE_FREQUENCY_CONTROL,
+            enable_header_management=ENABLE_HEADER_MANAGEMENT,
+            os_family=os_family,
+            mouse_speed_min=MOUSE_MOVEMENT_SPEED_MIN,
+            mouse_speed_max=MOUSE_MOVEMENT_SPEED_MAX,
+            click_delay_min=CLICK_DELAY_MIN,
+            click_delay_max=CLICK_DELAY_MAX,
+            scroll_smoothness=SCROLL_SMOOTHNESS,
+            browsing_duration_min=BROWSING_DURATION_MIN,
+            browsing_duration_max=BROWSING_DURATION_MAX,
+            random_click_probability=RANDOM_CLICK_PROBABILITY,
+            page_transition_delay_min=PAGE_TRANSITION_DELAY_MIN,
+            page_transition_delay_max=PAGE_TRANSITION_DELAY_MAX,
+            max_requests_per_minute=MAX_REQUESTS_PER_MINUTE,
+            min_request_interval=MIN_REQUEST_INTERVAL,
+            adaptive_backoff_enabled=ADAPTIVE_BACKOFF_ENABLED,
+            backoff_multiplier=BACKOFF_MULTIPLIER,
+            max_backoff_interval=MAX_BACKOFF_INTERVAL,
+        )
+    return _anti_fingerprint_manager
 
 
 async def initialize_page_logic(
@@ -133,6 +191,12 @@ async def initialize_page_logic(
         context_options["ignore_https_errors"] = True
         logger.info("   (浏览器上下文将忽略 HTTPS 错误)")
 
+        # 应用反指纹检测（HTTP 头管理）
+        anti_fp_manager = get_anti_fingerprint_manager()
+        if anti_fp_manager:
+            context_options = anti_fp_manager.update_context_options(context_options)
+            logger.info("   (已应用反指纹检测 HTTP 头)")
+
         temp_context = await browser.new_context(**context_options)
 
         # 设置网络拦截和脚本注入
@@ -183,6 +247,12 @@ async def initialize_page_logic(
                 f"-> 未找到合适的现有页面，正在打开新页面并导航到 {target_full_url}..."
             )
             found_page = await temp_context.new_page()
+            
+            # 页面加载后应用交互模拟
+            anti_fp_manager = get_anti_fingerprint_manager()
+            if anti_fp_manager:
+                # 在后台任务中执行，不阻塞主流程
+                asyncio.create_task(anti_fp_manager.on_page_loaded(found_page))
             if found_page:
                 logger.info("   为新创建的页面添加模型列表响应监听器 (导航前)。")
                 found_page.on("response", _handle_model_list_response)

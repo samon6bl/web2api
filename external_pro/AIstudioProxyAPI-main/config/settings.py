@@ -79,3 +79,31 @@ USERSCRIPT_PATH = get_environment_variable(
 # --- MCP 配置 ---
 MCP_HTTP_ENDPOINT = get_environment_variable("MCP_HTTP_ENDPOINT", "")
 MCP_HTTP_TIMEOUT = float(os.environ.get("MCP_HTTP_TIMEOUT", "15"))
+
+# --- 反指纹检测配置 ---
+ENABLE_ANTI_FINGERPRINT = get_boolean_env("ENABLE_ANTI_FINGERPRINT", True)
+ENABLE_BEHAVIOR_SIMULATION = get_boolean_env("ENABLE_BEHAVIOR_SIMULATION", True)
+ENABLE_INTERACTION_SIMULATION = get_boolean_env("ENABLE_INTERACTION_SIMULATION", True)
+ENABLE_FREQUENCY_CONTROL = get_boolean_env("ENABLE_FREQUENCY_CONTROL", True)
+ENABLE_HEADER_MANAGEMENT = get_boolean_env("ENABLE_HEADER_MANAGEMENT", True)
+
+# 行为模拟参数
+MOUSE_MOVEMENT_SPEED_MIN = float(os.environ.get("MOUSE_MOVEMENT_SPEED_MIN", "50.0"))
+MOUSE_MOVEMENT_SPEED_MAX = float(os.environ.get("MOUSE_MOVEMENT_SPEED_MAX", "200.0"))
+CLICK_DELAY_MIN = float(os.environ.get("CLICK_DELAY_MIN", "0.1"))
+CLICK_DELAY_MAX = float(os.environ.get("CLICK_DELAY_MAX", "0.5"))
+SCROLL_SMOOTHNESS = float(os.environ.get("SCROLL_SMOOTHNESS", "0.8"))
+
+# 交互模拟参数
+BROWSING_DURATION_MIN = float(os.environ.get("BROWSING_DURATION_MIN", "1.0"))
+BROWSING_DURATION_MAX = float(os.environ.get("BROWSING_DURATION_MAX", "3.0"))
+RANDOM_CLICK_PROBABILITY = float(os.environ.get("RANDOM_CLICK_PROBABILITY", "0.3"))
+PAGE_TRANSITION_DELAY_MIN = float(os.environ.get("PAGE_TRANSITION_DELAY_MIN", "0.5"))
+PAGE_TRANSITION_DELAY_MAX = float(os.environ.get("PAGE_TRANSITION_DELAY_MAX", "2.0"))
+
+# 频率控制参数
+MAX_REQUESTS_PER_MINUTE = get_int_env("MAX_REQUESTS_PER_MINUTE", 30)
+MIN_REQUEST_INTERVAL = float(os.environ.get("MIN_REQUEST_INTERVAL", "2.0"))
+ADAPTIVE_BACKOFF_ENABLED = get_boolean_env("ADAPTIVE_BACKOFF_ENABLED", True)
+BACKOFF_MULTIPLIER = float(os.environ.get("BACKOFF_MULTIPLIER", "1.5"))
+MAX_BACKOFF_INTERVAL = float(os.environ.get("MAX_BACKOFF_INTERVAL", "60.0"))

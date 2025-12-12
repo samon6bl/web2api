@@ -193,6 +193,14 @@ class QueueManager:
             f"Processing request (Stream={'Yes' if is_streaming_request else 'No'})"
         )
 
+        # 频率控制：请求前等待
+        from browser_utils.initialization.core import get_anti_fingerprint_manager
+        anti_fp_manager = get_anti_fingerprint_manager()
+        if anti_fp_manager:
+            await anti_fp_manager.before_request()
+        
+        request_start_time = time.time()
+
         # 2. Initial Connection Check
         from api_utils.request_processor import (
             _check_client_connection,  # pyright: ignore[reportPrivateUsage]
@@ -279,6 +287,12 @@ class QueueManager:
                             req_id, request_data, http_request, result_future
                         )
                         # If successful (no exception raised), break the retry loop
+                        # 记录成功请求到频率控制器
+                        request_end_time = time.time()
+                        response_time = request_end_time - request_start_time
+                        anti_fp_manager = get_anti_fingerprint_manager()
+                        if anti_fp_manager:
+                            await anti_fp_manager.after_request(success=True, response_time=response_time)
                         break
                     except asyncio.CancelledError:
                         # Check if this is a user-initiated shutdown
@@ -313,14 +327,28 @@ class QueueManager:
                             self.logger.warning(
                                 "(Worker) 检测到配额/限流错误，立即切换配置文件..."
                             )
+                            # 触发自适应退避
+                            anti_fp_manager = get_anti_fingerprint_manager()
+                            if anti_fp_manager:
+                                await anti_fp_manager.on_error("quota")
                             await self._switch_auth_profile(req_id)
                             continue
+                        
+                        # 其他错误也触发自适应退避
+                        anti_fp_manager = get_anti_fingerprint_manager()
+                        if anti_fp_manager:
+                            error_type = "rate_limit" if "429" in error_str or "rate limit" in error_str else None
+                            await anti_fp_manager.on_error(error_type)
 
                         # If it's the last attempt, re-raise to be handled by outer block
                         if attempt == max_attempts:
                             self.logger.critical(
                                 f"(Worker) All {max_attempts} attempts failed."
                             )
+                            # 记录失败请求到频率控制器
+                            anti_fp_manager = get_anti_fingerprint_manager()
+                            if anti_fp_manager:
+                                await anti_fp_manager.after_request(success=False)
                             raise
 
                         # Tier 1: Page Refresh (快速恢复，~2-3秒)

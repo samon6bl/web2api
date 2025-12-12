@@ -73,7 +73,7 @@ async def example_use_pool():
         
         # 连接到 Camoufox
         async with async_playwright() as p:
-            browser = await p.firefox.connect_over_cdp("ws://127.0.0.1:9222")
+            browser = await p.firefox.connect("ws://127.0.0.1:9222", timeout=30000)
             
             context = browser.contexts[0] if browser.contexts else await browser.new_context()
             page = context.pages[0] if context.pages else await context.new_page()
@@ -147,7 +147,7 @@ async def example_parallel_use():
         await asyncio.sleep(2)
         
         async with async_playwright() as p:
-            browser = await p.firefox.connect_over_cdp(f"ws://127.0.0.1:{port}")
+            browser = await p.firefox.connect(f"ws://127.0.0.1:{port}", timeout=30000)
             
             context = browser.contexts[0] if browser.contexts else await browser.new_context()
             page = context.pages[0] if context.pages else await context.new_page()

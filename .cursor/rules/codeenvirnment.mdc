@@ -1,0 +1,7 @@
+---
+alwaysApply: true
+---
+
+## 编程环境
+
+这是一个python venv 虚拟环境，python bin` 文件在`.venv\Scripts\`目录下。
