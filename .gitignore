@@ -1,0 +1,42 @@
+# Cookie 文件（包含敏感信息）
+cookies/
+*.json
+
+# 浏览器 profile（包含用户数据）
+browser_profile/
+
+# Chrome 用户数据池（包含用户数据）
+user_data_pool/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+.venv
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# 系统文件
+.DS_Store
+Thumbs.db
+
+# 调试文件
+*.png
+*.jpg
+*.zip
+trace.zip
+debug_*.png
+error_*.png
+timeout_*.png
+
+# 日志文件
+*.log
