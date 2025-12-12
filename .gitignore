@@ -40,3 +40,7 @@ timeout_*.png
 
 # 日志文件
 *.log
+
+
+#参考项目
+external_pro/
